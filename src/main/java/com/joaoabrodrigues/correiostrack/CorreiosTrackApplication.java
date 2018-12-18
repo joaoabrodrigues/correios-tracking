@@ -9,6 +9,5 @@ public class CorreiosTrackApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(CorreiosTrackApplication.class, args);
 	}
-
 }
 
