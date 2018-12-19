@@ -1,20 +1,14 @@
 package com.joaoabrodrigues.correiostrack.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.Document;
+import org.springframework.web.client.RestTemplate;
 
-import javax.xml.soap.*;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringWriter;
+import java.nio.charset.Charset;
 
 @Service
 public class CorreiosTrackingService {
@@ -22,46 +16,26 @@ public class CorreiosTrackingService {
     @Value("${correios.url.service}")
     private String url;
 
-    private static final String XML_ENVELOPE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://resource.webservice.correios.com.br/\">"
-            + "   <soapenv:Header/>" + "   <soapenv:Body>" + "      <res:buscaEventos>" + "         <usuario>ECT</usuario>" + "         <senha>SRO</senha>"
-            + "         <tipo>L</tipo>" + "         <resultado>T</resultado>" + "         <lingua>101</lingua>" + "         <objetos> %s </objetos>"
-            + "      </res:buscaEventos>" + "   </soapenv:Body>" + "</soapenv:Envelope>";
+        public String trackObject(String object) {
+            String request = "<rastroObjeto>"
+                    + "<usuario>MobileXect</usuario>"
+                    + "<senha>DRW0#9F$@0</senha>"
+                    + "<tipo>L</tipo>"
+                    + "<resultado>L</resultado>"
+                    + "<objetos>"
+                    + object
+                    + "</objetos>"
+                    + "<lingua>101</lingua>"
+                    + "</rastroObjeto>";
 
-    public String trackObject(String object) throws IOException, SOAPException {
-        String envelope = String.format(XML_ENVELOPE, object);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_XML);
 
-        SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
-        SOAPConnection soapConnection = soapConnectionFactory.createConnection();
+            HttpEntity<String> entity = new HttpEntity<>(request, headers);
 
-        MimeHeaders headers = new MimeHeaders();
-        headers.addHeader("Content-Type", MediaType.TEXT_XML_VALUE);
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
 
-        MessageFactory messageFactory = MessageFactory.newInstance();
-
-        SOAPMessage msg = messageFactory.createMessage(headers, (new ByteArrayInputStream(envelope.getBytes())));
-
-        SOAPMessage soapResponse = soapConnection.call(msg, url);
-        Document responseXML = soapResponse.getSOAPBody().getOwnerDocument();
-        return parseXmlToString(responseXML);
-    }
-
-    private static String parseXmlToString(Document xml) {
-        try {
-            TransformerFactory factory = TransformerFactory.newInstance();
-            factory.setAttribute("indent-number", 4);
-            Transformer trans = factory.newTransformer();
-            trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            trans.setOutputProperty(OutputKeys.INDENT, "yes");
-
-            StringWriter sw = new StringWriter();
-            StreamResult result = new StreamResult(sw);
-            DOMSource source = new DOMSource(xml);
-            trans.transform(source, result);
-            String xmlString = sw.toString();
-            return xmlString.substring(xmlString.indexOf("<objeto>"), xmlString.indexOf("</objeto>") + 10);
-        } catch (TransformerException e) {
-            e.printStackTrace();
+            return restTemplate.postForObject(url, entity, String.class);
         }
-        return null;
-    }
 }
