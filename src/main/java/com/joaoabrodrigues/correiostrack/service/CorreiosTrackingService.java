@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class CorreiosTrackingService {
@@ -34,7 +35,7 @@ public class CorreiosTrackingService {
             HttpEntity<String> entity = new HttpEntity<>(request, headers);
 
             RestTemplate restTemplate = new RestTemplate();
-            restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+            restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
 
             return restTemplate.postForObject(url, entity, String.class);
         }
